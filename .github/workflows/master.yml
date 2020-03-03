@@ -1,0 +1,66 @@
+name: "master"
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  Release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout  
+        uses: actions/checkout@v2
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.102
+      - name: Build Release
+        run: dotnet build --configuration Release -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg src/
+      - name: Run Unit Tests
+        run: dotnet test --configuration Release src/Loki.Net.Tests/
+      - name: Run Integration Tests
+        run: dotnet test --configuration Release src/Loki.Net.IntegrationTests/
+      - name: Get Nupkg Path
+        run: np=`echo src/Loki.Net/bin/Release/Loki.Net.*.nupkg` && echo "::set-env name=nupkgpath::$np"
+      - name: Get sNupkg Path
+        run: np=`echo src/Loki.Net/bin/Release/Loki.Net.*.snupkg` && echo "::set-env name=snupkgpath::$np"
+      - name: Get Build Verson
+        run: bv=`echo src/Loki.Net/bin/Release/Loki.Net.*.nupkg | sed 's/.*Loki.Net.//g' | sed 's/.nupkg$//g'` && echo "::set-env name=buildver::$bv"
+      - name: Get Nupkg File Name
+        run: echo "::set-env name=nupkgfilename::Loki.Net.${buildver}.nupkg"
+      - name: Get sNupkg File Name
+        run: echo "::set-env name=snupkgfilename::Loki.Net.${buildver}.snupkg"
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.buildver }}
+          release_name: v${{ env.buildver }}
+          draft: false
+          prerelease: false
+      - name: Upload Nuget Package Release Asset
+#        id: upload-release-asset1
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.nupkgpath }}
+          asset_name: ${{ env.nupkgfilename }}
+          asset_content_type: application/zip
+      - name: Upload sNuget Package Release Asset
+#        id: upload-release-asset2
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.snupkgpath }}
+          asset_name: ${{ env.snupkgfilename }}
+          asset_content_type: application/zip
+      - name: Deploy Nuget Package
+        run: dotnet nuget push src/Loki.Net/bin/Release/*.nupkg --api-key ${{ secrets.NUGET_DEPLOY_KEY }} --source https://api.nuget.org/v3/index.json
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1

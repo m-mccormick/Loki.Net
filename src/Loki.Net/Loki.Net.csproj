@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <Authors>Authors</Authors>
+        <Copyright>Copyright</Copyright>
+        <VersionPrefix>0.0.3.3</VersionPrefix>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Title>Loki.Net</Title>
+        <PackageProjectUrl>NugetUrl</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/m-mccormick/Loki.Net</RepositoryUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+      <PackageReference Include="System.Collections.Immutable" Version="1.7.0" />
+    </ItemGroup>
+
+</Project>
